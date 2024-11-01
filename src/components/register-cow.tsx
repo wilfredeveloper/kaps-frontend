@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function RegisterCowComponent() {
   const [isLoading, setIsLoading] = useState(false)
+  const [gender, setGender] = useState<"male" | "female" | null>(null)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -20,7 +21,7 @@ export function RegisterCowComponent() {
   }
 
   return (
-    <Card className="w-[350px]">
+    <Card className="w-[450px]">
       <CardHeader>
         <CardTitle>Register New Cow</CardTitle>
         <CardDescription>Enter the details of the new cow</CardDescription>
@@ -33,31 +34,45 @@ export function RegisterCowComponent() {
               <Input id="name" placeholder="Enter cow's name" required />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="id">ID Number</Label>
-              <Input id="id" placeholder="Enter cow's ID number" required />
-            </div>
-            <div className="flex flex-col space-y-1.5">
               <Label htmlFor="breed">Breed</Label>
               <Input id="breed" placeholder="Enter cow's breed" required />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="dob">Date of Birth</Label>
-              <Input id="dob" type="date" required />
+              <Label htmlFor="breed">Body Weight</Label>
+              <Input id="body-weight" name='' placeholder="Enter cow's breed" required />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="lactation-stage">Lactation Stage</Label>
-              <Select required>
-                <SelectTrigger id="lactation-stage">
-                  <SelectValue placeholder="Select lactation stage" />
+              <Label htmlFor="age">Age (in years)</Label>
+              <Input id="age" type="number" min="0" step="0.1" placeholder="Enter cow's approximate age in years" required />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="gender">Gender</Label>
+              <Select required onValueChange={(value) => setGender(value as "male" | "female")}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="early">Early</SelectItem>
-                  <SelectItem value="mid">Mid</SelectItem>
-                  <SelectItem value="late">Late</SelectItem>
-                  <SelectItem value="dry">Dry</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {gender === "female" && (
+              <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="lactation-stage">Lactation Stage</Label>
+              <Select required>
+                <SelectTrigger id="lactation-stage">
+                <SelectValue placeholder="Select lactation stage" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="early">Early</SelectItem>
+                <SelectItem value="mid">Mid</SelectItem>
+                <SelectItem value="late">Late</SelectItem>
+                <SelectItem value="dry">Dry</SelectItem>
+                </SelectContent>
+              </Select>
+              </div>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Registering..." : "Register Cow"}
             </Button>

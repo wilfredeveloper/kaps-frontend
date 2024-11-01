@@ -20,7 +20,7 @@ export function RegisterFarmerComponent() {
   }
 
   return (
-    <Card className="w-[350px]">
+    <Card className="w-[450px]">
       <CardHeader>
         <CardTitle>Register Farmer Information</CardTitle>
         <CardDescription>Enter your details</CardDescription>
@@ -45,8 +45,8 @@ export function RegisterFarmerComponent() {
               <Input id="phone" type="tel" placeholder="Enter your phone number" required />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="address">Farm Address</Label>
-              <Textarea id="address" placeholder="Enter your farm address" required />
+              <Label htmlFor="phone">County of residence</Label>
+              <Input id="phone" placeholder="Nakuru, Kiambu etc" required />
             </div>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Registering..." : "Register"}

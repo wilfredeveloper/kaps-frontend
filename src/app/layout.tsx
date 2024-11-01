@@ -36,6 +36,18 @@ export default function RootLayout({
           {children}
           <Toaster />
         </body>
+        <footer className="flex flex-wrap items-center justify-center py-8">
+          <a
+            href="https://vercel.com?utm_source=geist&utm_campaign=oss"
+            target="_blank"
+            rel="noopener noreferrer"
+            className=""
+          >
+            <p className="text-xs capitalize tracking-[0.5rem]">
+              POWERED BY ECODAIRY LABS
+            </p>
+          </a>
+        </footer>
       </ToastProvider>
     </html>
   );

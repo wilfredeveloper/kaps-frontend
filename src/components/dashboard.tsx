@@ -38,6 +38,11 @@ import {
   BarChart as BarChartIcon,
   Icon,
   TrendingUp,
+  Bolt,
+  BoltIcon,
+  Zap,
+  WalletCards,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { cowHead } from "@lucide/lab";
 import { Button } from "@/components/ui/button";
@@ -69,18 +74,30 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { MethaneTrendsGraph } from "./methane-trends-graph";
+import MethaneVsMilkChart from "./methane-trends-graph";
+import { FeedEfficiencyAnalysis } from "./feed-efficiency-analysis-graph";
+import { Avatar, AvatarImage } from "./ui/avatar";
+import { AvatarFallback } from "@radix-ui/react-avatar";
+import { DividerVerticalIcon } from "@radix-ui/react-icons";
 
 // Mock data generation functions
-const generateChartData = (startDate: Date, days: number): any[] => {
+const generateData = (startDate: Date, days: number): any[] => {
   const data = [];
+  let methane = 150;
+  let milk = 20;
+
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
+
+    // Simulate a reduction in methane and increase in milk production over time
+    methane = Math.max(80, methane - Math.random() * 2);
+    milk = Math.min(35, milk + Math.random() * 0.5);
+
     data.push({
       date: date.toLocaleDateString(),
-      methane: Math.floor(Math.random() * (150 - 80) + 80),
-      milk: Math.floor(Math.random() * (35 - 20) + 20),
+      methane: Math.floor(methane),
+      milk: Math.floor(milk),
     });
   }
   return data;
@@ -90,48 +107,87 @@ const cowsData = [
   {
     id: "cow1",
     name: "Bessie",
-    age: 5,
-    weight: 257,
+    age: 3,
+    weight: 257, // kg
     lactationStage: "Mid",
-    milkYield: Math.floor(Math.random() * (35 - 20) + 20),
-    feedIntake: Math.floor(Math.random() * (50 - 30) + 30),
+    milkYield: 25, // liters per day
+    feedIntake: 45, // kg per day
   },
   {
     id: "cow2",
     name: "Daisy",
-    age: 3,
-    weight: 300,
+    age: 2,
+    weight: 300, // kg
     lactationStage: "Early",
-    milkYield: Math.floor(Math.random() * (35 - 20) + 20),
-    feedIntake: Math.floor(Math.random() * (50 - 30) + 30),
+    milkYield: 30, // liters per day
+    feedIntake: 50, // kg per day
   },
   {
     id: "cow3",
     name: "Molly",
-    age: 7,
-    weight: 337,
+    age: 2,
+    weight: 337, // kg
     lactationStage: "Late",
-    milkYield: Math.floor(Math.random() * (35 - 20) + 20),
-    feedIntake: Math.floor(Math.random() * (50 - 30) + 30),
+    milkYield: 20, // liters per day
+    feedIntake: 42, // kg per day
   },
 ];
 
+const averageEfficiency =
+  cowsData.reduce((sum, data) => sum + data.milkYield / data.feedIntake, 0) /
+  cowsData.length;
+
+interface ChartData {
+  date: string;
+  methane: number;
+  milk: number;
+}
+
 export function Dashboard() {
   const [selectedCow, setSelectedCow] = useState("all");
-  const [chartData, setChartData] = useState(
-    generateChartData(new Date("2023-01-01"), 14)
-  );
+
+  const chartData: ChartData[] = [
+    { date: "2024-09-02", methane: 27.7, milk: 29.2 }, // Week 1
+    { date: "2024-09-09", methane: 27.9, milk: 29.9 }, // Week 2
+    { date: "2024-09-16", methane: 28.1, milk: 30.6 }, // Week 3
+    { date: "2024-09-23", methane: 28.3, milk: 31.3 }, // Week 4
+    { date: "2024-09-30", methane: 28.5, milk: 32.0 }, // End of month
+  ];
+
   const { toast } = useToast();
 
-  // Simulating real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newChartData = generateChartData(new Date("2023-01-01"), 14);
-      setChartData(newChartData);
-    }, 100000);
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active: boolean;
+    payload: any[];
+    label: string;
+  }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border rounded-lg shadow-sm">
+          <p className="font-medium">{formatDate(label)}</p>
+          <p className="text-sm text-green-600">
+            Milk Production: {payload[0].value} kg/day/cow
+          </p>
+          <p className="text-sm text-red-600">
+            Methane Emissions: {payload[1].value} kg/day/cow
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   const generateFullReport = () => {
     return {
@@ -168,16 +224,73 @@ export function Dashboard() {
     },
   } satisfies ChartConfig;
 
+  const pieChartConfig = {
+    efficiency: {
+      label: "Feed Efficiency",
+    },
+  } satisfies ChartConfig;
+
   console.log("====> chart data: ", chartData);
 
   return (
     <div className="mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-green-800">
-        Dairy Farm Management Dashboard
-      </h1>
+      <div className="flex items-center mb-8">
+        <div className="flex items-center justify-center flex-col">
+          <Avatar className="h-[100px] w-[100px] me-4">
+            <AvatarImage
+              src={"/person-placeholder.png"}
+              alt={"image"}
+              className="object-cover"
+            />
+            <AvatarFallback>Th</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-3xl font-bold text-green-800">Hello Thuku,</h1>
+            <p className="text-sm text-muted-foreground text-center">
+              Your stats today
+            </p>
+          </div>
+        </div>
+        <DividerVerticalIcon className="h-20 w-8 text-muted-foreground mx-8" />
+        <div className="flex items-center gap-8">
+          {/* show streaks and number using lightning bolt icon */}
+          <div className="flex items-center space-x-2">
+            <Zap className="h-12 w-12 fill-yellow-400 stroke-none" />
+            <div>
+              <p className="text-sm text-muted-foreground">Longest Streak</p>
+              <p className="text-2xl font-bold">37 days</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Zap className="h-12 w-12 fill-gray-300 stroke-none" />
+            <div>
+              <p className="text-sm text-muted-foreground">Current Streak</p>
+              <p className="text-2xl font-bold">0</p>
+            </div>
+          </div>
+        </div>
+        <DividerVerticalIcon className="h-20 w-8 text-muted-foreground mx-8" />
+        <div className="flex items-center gap-8">
+          <div className="flex items-center space-x-2">
+            <WalletCards className="h-8 w-8 text-blue-400" />
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Subscription Status
+              </p>
+              <Badge variant="outline" className="text-red-600 bg-red-100">
+                No active subscription
+              </Badge>
+            </div>
+            <Button variant="outline" className="ms-4" size="sm">
+              Upgrade
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Overview Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -212,7 +325,26 @@ export function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">Good</div>
             <p className="text-xs text-muted-foreground">
-              2 cows need attention
+              1 cow needs attention
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Weather Impact Alert */}
+        <Card className="bg-orange-100 border-orange-300">
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+            <ThermometerSun className="h-6 w-6 text-orange-600 mr-2" />
+            <div>
+              <CardTitle>Weather Impact Alert</CardTitle>
+              <CardDescription>
+                High temperatures expected this week
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Increased temperatures may lead to heat stress. Consider adjusting
+              feeding times and increasing water availability.
             </p>
           </CardContent>
         </Card>
@@ -302,198 +434,74 @@ export function Dashboard() {
       {/* Trends & Analytics and Feed Efficiency Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Trends & Analytics */}
-        <Card>
+        <MethaneVsMilkChart />
+        {/* Feed Efficiency Analysis */}
+        <FeedEfficiencyAnalysis cowsData={cowsData} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {/* Detailed Cow Data */}
+        <Card className="">
           <CardHeader>
-            <CardTitle>Methane Emissions & Milk Yield Trends</CardTitle>
+            <CardTitle>Detailed Cow Data</CardTitle>
             <CardDescription>
-              Historical data with date range selection
+              Individual cow statistics and comparisons
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig}>
-              <AreaChart
-                accessibilityLayer
-                data={chartData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent />}
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-                <XAxis dataKey={"date"} tickLine={false} axisLine={false} tickMargin={8} angle={45} />
-                <defs>
-                  <linearGradient id="fillMethane" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="var(--color-methane)"
-                      stopOpacity={0.8}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--color-methane)"
-                      stopOpacity={0.1}
-                    />
-                  </linearGradient>
-                  <linearGradient id="fillMilk" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="var(--color-milk)"
-                      stopOpacity={0.8}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--color-milk)"
-                      stopOpacity={0.1}
-                    />
-                  </linearGradient>
-                </defs>
-                <Area
-                  dataKey="methane"
-                  type="natural"
-                  fill="url(#fillMethane)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-methane)"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="milk"
-                  type="natural"
-                  fill="url(#fillMilk)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-milk)"
-                  stackId="a"
-                />
-              </AreaChart>
-            </ChartContainer>
+            <Table className="">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Weight (kg)</TableHead>
+                  <TableHead>Lactation Stage</TableHead>
+                  <TableHead>Today's Methane (g)</TableHead>
+                  <TableHead>Today's Milk (L)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cowsData.map((cow) => (
+                  <TableRow key={cow.id}>
+                    <TableCell>{cow.name}</TableCell>
+                    <TableCell>{cow.age}</TableCell>
+                    <TableCell>{cow.weight}</TableCell>
+                    <TableCell>{cow.lactationStage}</TableCell>
+                    <TableCell>
+                      {Math.floor(Math.random() * (150 - 80) + 80)}
+                    </TableCell>
+                    <TableCell>
+                      {Math.floor(Math.random() * (35 - 20) + 20)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-        {/* <MethaneTrendsGraph /> */}
 
-        {/* Feed Efficiency Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Feed Efficiency Analysis</CardTitle>
-            <CardDescription>Milk yield per kg of feed intake</CardDescription>
+        {/* IoT Integration & Notifications */}
+        <Card className="">
+          <CardHeader className="flex flex-row items-center">
+            <Bell className="h-6 w-6 text-blue-600 mr-2" />
+            <div>
+              <CardTitle>IoT Notifications</CardTitle>
+              <CardDescription>
+                Real-time updates from methane sensors connected to cows in the
+                barn
+              </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={cowsData.map((cow) => ({
-                    name: cow.name,
-                    efficiency: cow.milkYield / cow.feedIntake,
-                  }))}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    dataKey="efficiency"
-                    fill="#8884d8"
-                    name="Milk (L) per kg Feed"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-2">
+              <Badge variant="outline" className="text-green-600 bg-green-100">
+                All systems operational
+              </Badge>
+              <p>Monitoring 3 connected devices. Last update: 13 days ago</p>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Detailed Cow Data */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Detailed Cow Data</CardTitle>
-          <CardDescription>
-            Individual cow statistics and comparisons
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Weight (kg)</TableHead>
-                <TableHead>Lactation Stage</TableHead>
-                <TableHead>Today's Methane (g)</TableHead>
-                <TableHead>Today's Milk (L)</TableHead>
-                <TableHead>Feed Efficiency</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cowsData.map((cow) => (
-                <TableRow key={cow.id}>
-                  <TableCell>{cow.name}</TableCell>
-                  <TableCell>{cow.age}</TableCell>
-                  <TableCell>{cow.weight}</TableCell>
-                  <TableCell>{cow.lactationStage}</TableCell>
-                  <TableCell>
-                    {Math.floor(Math.random() * (150 - 80) + 80)}
-                  </TableCell>
-                  <TableCell>
-                    {Math.floor(Math.random() * (35 - 20) + 20)}
-                  </TableCell>
-                  <TableCell>{(Math.random() * 2 + 1).toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* IoT Integration & Notifications */}
-      <Card className="mt-6">
-        <CardHeader className="flex flex-row items-center">
-          <Bell className="h-6 w-6 text-blue-600 mr-2" />
-          <div>
-            <CardTitle>IoT Notifications</CardTitle>
-            <CardDescription>
-              Real-time updates from connected devices
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Badge variant="outline" className="text-green-600 bg-green-100">
-              All systems operational
-            </Badge>
-            <p>Monitoring 3 connected devices. Last update: 13 days ago</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Weather Impact Alert */}
-      <Card className="mt-6 bg-orange-100 border-orange-300">
-        <CardHeader className="flex flex-row items-center">
-          <ThermometerSun className="h-6 w-6 text-orange-600 mr-2" />
-          <div>
-            <CardTitle>Weather Impact Alert</CardTitle>
-            <CardDescription>
-              High temperatures expected this week
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p>
-            Increased temperatures may lead to heat stress. Consider adjusting
-            feeding times and increasing water availability.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Monthly Report Summary */}
       <Card className="mt-6">
@@ -597,4 +605,46 @@ export function Dashboard() {
       <Toast />
     </div>
   );
+}
+
+{
+  /* <Card>
+          <CardHeader>
+            <CardTitle>Methane Emissions & Milk Yield Trends</CardTitle>
+            <CardDescription>
+              Historical data with date range selection
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ left: 12, right: 12 }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) =>
+                    new Date(value).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  }
+                  angle={45}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent />}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="methane" fill="var(--color-methane)" radius={4} />
+                <Bar dataKey="milk" fill="var(--color-milk)" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card> */
 }
