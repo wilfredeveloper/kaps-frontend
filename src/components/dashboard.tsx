@@ -79,6 +79,7 @@ import { FeedEfficiencyAnalysis } from "./feed-efficiency-analysis-graph";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { DividerVerticalIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
 
 // Mock data generation functions
 const generateData = (startDate: Date, days: number): any[] => {
@@ -282,9 +283,11 @@ export function Dashboard() {
                 No active subscription
               </Badge>
             </div>
-            <Button variant="outline" className="ms-4" size="sm">
-              Upgrade
-            </Button>
+            <Link href="/subscribe">
+              <Button variant="outline" className="ms-4" size="sm">
+                Upgrade
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

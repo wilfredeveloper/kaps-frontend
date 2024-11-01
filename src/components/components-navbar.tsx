@@ -45,6 +45,10 @@ export function NavbarComponent() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  if (pathname === "/" || pathname === "/subscribe") {
+    return null;
+  }
+
   return (
     <nav
       className={cn(
